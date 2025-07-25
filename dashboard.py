@@ -12,7 +12,7 @@ conf = {
     'sasl.mechanisms': 'PLAIN',
     'sasl.username': st.secrets["SASL_USERNAME"],
     'sasl.password': st.secrets["SASL_PASSWORD"],
-    'group.id': 'streamlit-dashboard',
+    'group.id': 'streamlit-consumer',
     'auto.offset.reset': 'latest'
 }
 
@@ -48,8 +48,10 @@ st.write(df.tail(10))
 st.subheader("Sentiment Distribution")
 st.bar_chart(pd.Series(st.session_state.sentiment_counter))
 
-# Auto-refresh every 10 seconds
-st.experimental_rerun()
-time.sleep(10)
+# Add refresh control
+if st.button("🔄 Refresh"):
+    st.experimental_rerun()
 
+# Gracefully close Kafka consumer at end
 consumer.close()
+
