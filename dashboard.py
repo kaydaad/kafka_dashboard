@@ -50,8 +50,8 @@ st.bar_chart(pd.Series(st.session_state.sentiment_counter))
 
 # Add refresh control
 if st.button("🔄 Refresh"):
-    st.experimental_rerun()
+    st.session_state.refreshed = True  # Just a placeholder to trigger rerun
 
-# Gracefully close Kafka consumer at end
+# Gracefully close Kafka consumer
 consumer.close()
 
