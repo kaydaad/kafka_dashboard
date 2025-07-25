@@ -7,11 +7,11 @@ import time
 
 # Load secrets from Streamlit's Secrets Manager
 conf = {
-    'bootstrap.servers': st.secrets["BOOTSTRAP_SERVERS"],
+    'BOOTSTRAP_SERVERS': st.secrets["BOOTSTRAP_SERVERS"],
     'security.protocol': 'SASL_SSL',
     'sasl.mechanisms': 'PLAIN',
-    'sasl.username': st.secrets["SASL_USERNAME"],
-    'sasl.password': st.secrets["SASL_PASSWORD"],
+    'SASL_USERNAME': st.secrets["SASL_USERNAME"],
+    'SASL_PASSWORD': st.secrets["SASL_PASSWORD"],
     'group.id': 'streamlit-consumer',
     'auto.offset.reset': 'latest'
 }
