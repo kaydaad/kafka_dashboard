@@ -5,53 +5,52 @@ import json
 from collections import Counter
 import time
 
-# Load secrets from Streamlit's Secrets Manager
+# Kafka Config
 conf = {
-    'BOOTSTRAP_SERVERS': st.secrets["BOOTSTRAP_SERVERS"],
+    'bootstrap.servers': 'pkc-rgm37.us-west-2.aws.confluent.cloud:9092',
     'security.protocol': 'SASL_SSL',
     'sasl.mechanisms': 'PLAIN',
-    'SASL_USERNAME': st.secrets["SASL_USERNAME"],
-    'SASL_PASSWORD': st.secrets["SASL_PASSWORD"],
-    'group.id': 'streamlit-consumer',
-    'auto.offset.reset': 'latest'
+    'sasl.username': 'G4PUVCL67RQ6FYIP',
+    'sasl.password': 'VaVJ1RVPIcWiUUQW/T6uBWq5f6tdLzn6hMBgsxXiZzC7VmLkcwIh1buO9QfbAVa9',
+    'group.id': 'streamlit-dashboard',
+    'auto.offset.reset': 'earliest'
 }
 
-topic = st.secrets["TOPIC"]
-consumer = Consumer(conf)
-consumer.subscribe([topic])
+topic = 'customer-support-events'
 
 st.set_page_config(page_title="Customer Support Dashboard", layout="wide")
 st.title("📊 Customer Support Events Dashboard")
 
-# Session state to persist data across reruns
-if "data" not in st.session_state:
-    st.session_state.data = []
-if "sentiment_counter" not in st.session_state:
-    st.session_state.sentiment_counter = Counter()
+placeholder = st.empty()
 
-# Try polling a new message
-msg = consumer.poll(timeout=1.0)
-if msg is not None and not msg.error():
-    try:
-        record = json.loads(msg.value().decode("utf-8"))
-        st.session_state.data.append(record)
-        sentiment = record.get("sentiment", "unknown")
-        st.session_state.sentiment_counter[sentiment] += 1
-    except Exception as e:
-        st.error(f"Error decoding message: {e}")
+sentiment_counter = Counter()
+consumer = Consumer(conf)
+consumer.subscribe([topic])
 
-# Display dashboard
-df = pd.DataFrame(st.session_state.data)
-st.subheader("Latest 10 Messages")
-st.write(df.tail(10))
+data = []
 
-st.subheader("Sentiment Distribution")
-st.bar_chart(pd.Series(st.session_state.sentiment_counter))
+while True:
+    msg = consumer.poll(1.0)
+    if msg is None:
+        continue
+    if msg.error():
+        st.error(f"Error: {msg.error()}")
+        continue
 
-# Add refresh control
-if st.button("🔄 Refresh"):
-    st.session_state.refreshed = True  # Just a placeholder to trigger rerun
+    record = json.loads(msg.value().decode('utf-8'))
+    data.append(record)
+    sentiment = record.get("sentiment", "unknown")
+    sentiment_counter[sentiment] += 1
 
-# Gracefully close Kafka consumer
+    df = pd.DataFrame(data)
+
+    with placeholder.container():
+        st.subheader("Latest 10 Messages")
+        st.write(df.tail(10))
+
+        st.subheader("Sentiment Distribution")
+        st.bar_chart(pd.Series(sentiment_counter))
+
+    time.sleep(1)
+
 consumer.close()
-
